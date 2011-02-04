@@ -32,6 +32,10 @@ class Heater
     HeatingElement& element;
     Timeout next_pid_timeout;
     Timeout next_sense_timeout;
+
+    Timeout sanity_check_timeout;
+    int sanity_check_target;
+
     micros_t sample_interval_micros;
     
     int current_temperature;

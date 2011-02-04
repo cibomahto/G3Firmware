@@ -39,6 +39,11 @@
 // If we read a temperature higher than this, shut down the heater
 #define HEATER_CUTOFF_TEMPERATURE 280
 
+// When the heater enters PID bypass mode, this timer is started. If the temperature
+// hasn't increased by _DELTA before it expires, shut down the heater.
+#define HEATER_SANITY_CHECK_MICROS 120000L * 1000L
+#define HEATER_SANITY_CHECK_DELTA 3
+
 Heater::Heater(TemperatureSensor& sensor_in, HeatingElement& element_in, micros_t sample_interval_micros_in, uint16_t eeprom_base_in) :
 		sensor(sensor_in),
 		element(element_in),
@@ -73,6 +78,8 @@ void Heater::reset() {
 	pid.setTarget(0);
 	next_pid_timeout.start(UPDATE_INTERVAL_MICROS);
 	next_sense_timeout.start(sample_interval_micros);
+
+	sanity_check_timeout.abort();
 }
 
 void Heater::set_target_temperature(int temp)
@@ -159,18 +166,31 @@ void Heater::manage_temperature()
 
 		next_sense_timeout.start(sample_interval_micros);
 	}
+	if (sanity_check_timeout.hasElapsed()) {
+		if (current_temperature < sanity_check_target) {
+			current_temperature = 1024;
+			fail();
+			return;
+		}
+	}
+
 	if (next_pid_timeout.hasElapsed()) {
 		next_pid_timeout.start(UPDATE_INTERVAL_MICROS);
 
 		int delta = pid.getTarget() - current_temperature;
 
 		if( bypassing_PID && (delta < PID_BYPASS_DELTA) ) {
+			// Exit PID bypass mode
 			bypassing_PID = false;
 
 			pid.reset_state();
 		}
 		else if ( !bypassing_PID && (delta > PID_BYPASS_DELTA + 10) ) {
+			// Enter PID bypass mode
 			bypassing_PID = true;
+
+			sanity_check_timeout.start(HEATER_SANITY_CHECK_MICROS);
+			sanity_check_target = current_temperature + HEATER_SANITY_CHECK_DELTA;
 		}
 
 		if( bypassing_PID ) {
