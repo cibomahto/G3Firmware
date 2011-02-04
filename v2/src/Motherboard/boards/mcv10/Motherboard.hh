@@ -45,11 +45,16 @@ private:
 	Motherboard();
 
 	static Motherboard motherboard;
+
+	uint8_t resetFlags;
+
 public:
 	/// Reset the motherboard to its initial state.
 	/// This only resets the board, and does not send a reset
 	/// to any attached toolheads.
-	void reset();
+	void reset(uint8_t resetFlags);
+
+	uint8_t getResetFlags() { return resetFlags; }
 
 	/// Get the UART that communicates with the host.
 	UART& getHostUART() { return UART::getHostUART(); }

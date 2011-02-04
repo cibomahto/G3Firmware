@@ -52,7 +52,9 @@ Motherboard::Motherboard() {
 /// Reset the motherboard to its initial state.
 /// This only resets the board, and does not send a reset
 /// to any attached toolheads.
-void Motherboard::reset() {
+void Motherboard::reset(uint8_t resetFlags) {
+	this->resetFlags = resetFlags;
+
 	indicateError(0); // turn off blinker
 	// Init and turn on power supply
 	getPSU().init();

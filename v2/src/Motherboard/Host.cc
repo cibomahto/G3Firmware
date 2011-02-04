@@ -381,6 +381,12 @@ inline void handleExtendedStop(const InPacket& from_host, OutPacket& to_host) {
 	to_host.append8(0);
 }
 
+inline void handleGetStatus(const InPacket& from_host, OutPacket& to_host) {
+	to_host.append8(RC_OK);
+	to_host.append8( /* (board.getExtruderHeater().has_failed()?128:0) */
+			        ((Motherboard::getBoard().getResetFlags() & 0x0f) << 2));
+}
+
 bool processQueryPacket(const InPacket& from_host, OutPacket& to_host) {
 	if (from_host.getLength() >= 1) {
 		uint8_t command = from_host.read8(0);
@@ -445,6 +451,9 @@ bool processQueryPacket(const InPacket& from_host, OutPacket& to_host) {
 				return true;
 			case HOST_CMD_EXTENDED_STOP:
 				handleExtendedStop(from_host,to_host);
+				return true;
+			case HOST_CMD_GET_STATUS:
+				handleGetStatus(from_host,to_host);
 				return true;
 			}
 		}

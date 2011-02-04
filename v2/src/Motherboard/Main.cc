@@ -29,12 +29,15 @@
 
 void reset(bool hard_reset) {
 	ATOMIC_BLOCK(ATOMIC_FORCEON) {
+		uint8_t resetFlags = MCUSR & 0x0f;
+		MCUSR = 0x0;
+
 		Motherboard& board = Motherboard::getBoard();
 		sdcard::reset();
 		steppers::abort();
 		command::reset();
 		eeprom::init();
-		board.reset();
+		board.reset(resetFlags);
 		sei();
 		// If we've just come from a hard reset, wait for 2.5 seconds before
 		// trying to ping an extruder.  This gives the extruder time to boot
