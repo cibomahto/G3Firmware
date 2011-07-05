@@ -26,6 +26,9 @@
 #include "EepromMap.hh"
 #include "ExtruderBoard.hh"
 #include "MotorController.hh"
+#include "LightShow.hh"
+
+
 
 void runHostSlice();
 
@@ -40,19 +43,27 @@ void reset() {
 	eeprom::init();
 	ExtruderBoard::getBoard().reset(resetFlags);
 	MotorController::getController().reset();
-	sei();
+        initI2C();
+        sei();
+
+
+
 }
 
 int main() {
 	reset();
-	while (1) {
-		// Host interaction thread.
-		runHostSlice();
+        while (1) {
+                // Host interaction thread.
+                runHostSlice();
 		// Temperature monitoring thread
-		runTempSlice();
+                runTempSlice();
 		// Motor update thread
-		MotorController::runMotorSlice();
+                MotorController::runMotorSlice();
+                //LightShow Thread
+                runLightShowSlice();
+
 	}
+
 	return 0;
 }
 
